@@ -1,7 +1,9 @@
 use clap::ValueEnum;
+use serde::{Deserialize, Deserializer, Serialize};
 
 /// Log level enum usable as a clap `ValueEnum`.
-#[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum LogLevel {
     Trace,
     Debug,
@@ -50,6 +52,20 @@ impl LogLevel {
     }
 }
 
+impl<'de> Deserialize<'de> for LogLevel {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+        Self::parse(&value).ok_or_else(|| {
+            serde::de::Error::custom(format!(
+                "unknown log level `{value}`; expected one of trace, debug, info, warn, error"
+            ))
+        })
+    }
+}
+
 /// Setup tracing subscriber.
 ///
 /// Honors `RUST_LOG` if set, otherwise uses the provided level string.
@@ -72,4 +88,23 @@ pub fn setup_tracing(level: &str, no_color: bool) {
 /// Setup tracing from a `LogLevel` value.
 pub fn setup_tracing_from_level(level: LogLevel, no_color: bool) {
     setup_tracing(level.as_str(), no_color);
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::expect_used, clippy::unwrap_used)]
+
+    use super::LogLevel;
+
+    #[test]
+    fn serializes_as_lowercase_string() {
+        let serialized = serde_json::to_string(&LogLevel::Debug).unwrap();
+        assert_eq!(serialized, "\"debug\"");
+    }
+
+    #[test]
+    fn deserializes_case_insensitive_strings() {
+        let deserialized = serde_json::from_str::<LogLevel>("\"DeBuG\"").unwrap();
+        assert_eq!(deserialized, LogLevel::Debug);
+    }
 }
