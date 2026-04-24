@@ -1,0 +1,32 @@
+[package]
+name = "cli-helpers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository = "https://github.com/thiezn/my-crates"
+description = "Reusable helpers for Rust CLI applications"
+
+[features]
+default = []
+config = ["dep:serde", "dep:toml"]
+interactive = ["dep:dialoguer"]
+markdown = ["dep:pulldown-cmark"]
+output = ["dep:clap", "dep:serde", "dep:serde_json"]
+paths = ["dep:dirs"]
+progress = ["dep:indicatif"]
+tracing = ["dep:clap", "dep:tracing", "dep:tracing-subscriber"]
+
+[dependencies]
+clap = { version = "4", features = ["derive"], optional = true }
+dialoguer = { version = "0", optional = true }
+dirs = { version = "6", optional = true }
+indicatif = { version = "0", optional = true }
+pulldown-cmark = { version = "0", optional = true }
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
+toml = { version = "0", optional = true }
+tracing = { version = "0", optional = true }
+tracing-subscriber = { version = "0", features = ["env-filter", "fmt"], optional = true }
+
+[lints]
+workspace = true
