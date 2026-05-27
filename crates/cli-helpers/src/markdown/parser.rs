@@ -42,6 +42,8 @@ struct ParserState {
     link_stack: Vec<LinkState>,
 }
 
+/// Parses Markdown text into a line-oriented document model.
+#[must_use]
 pub fn parse_markdown(input: &str) -> MarkdownDocument {
     let mut state = ParserState::default();
     let options = Options::ENABLE_STRIKETHROUGH

@@ -1,19 +1,25 @@
-use clap::ValueEnum;
 use serde::{Deserialize, Deserializer, Serialize};
 
-/// Log level enum usable as a clap `ValueEnum`.
-#[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
+/// Log levels supported by cli-helpers tracing setup.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum LogLevel {
+    /// Verbose trace-level logging.
     Trace,
+    /// Debug logging.
     Debug,
+    /// Informational logging.
     #[default]
     Info,
+    /// Warning logging.
     Warn,
+    /// Error logging only.
     Error,
 }
 
 impl LogLevel {
+    /// Returns the canonical string representation of the log level.
+    #[must_use]
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Trace => "trace",
@@ -24,16 +30,8 @@ impl LogLevel {
         }
     }
 
-    pub fn to_tracing_level(self) -> tracing::Level {
-        match self {
-            Self::Trace => tracing::Level::TRACE,
-            Self::Debug => tracing::Level::DEBUG,
-            Self::Info => tracing::Level::INFO,
-            Self::Warn => tracing::Level::WARN,
-            Self::Error => tracing::Level::ERROR,
-        }
-    }
-
+    /// Parses a log level string.
+    #[must_use]
     pub fn parse(value: &str) -> Option<Self> {
         let value = value.trim();
         if value.eq_ignore_ascii_case("trace") {
@@ -59,35 +57,11 @@ impl<'de> Deserialize<'de> for LogLevel {
     {
         let value = String::deserialize(deserializer)?;
         Self::parse(&value).ok_or_else(|| {
-            serde::de::Error::custom(format!(
-                "unknown log level `{value}`; expected one of trace, debug, info, warn, error"
-            ))
+            serde::de::Error::custom(
+                "unknown log level; expected one of trace, debug, info, warn, error",
+            )
         })
     }
-}
-
-/// Setup tracing subscriber.
-///
-/// Honors `RUST_LOG` if set, otherwise uses the provided level string.
-/// When `no_color` is true, ANSI escape codes are disabled.
-pub fn setup_tracing(level: &str, no_color: bool) {
-    let filter = if std::env::var("RUST_LOG").is_ok() {
-        tracing_subscriber::EnvFilter::from_default_env()
-    } else {
-        tracing_subscriber::EnvFilter::new(level)
-    };
-
-    tracing_subscriber::fmt()
-        .without_time()
-        .with_target(false)
-        .with_ansi(!no_color)
-        .with_env_filter(filter)
-        .init();
-}
-
-/// Setup tracing from a `LogLevel` value.
-pub fn setup_tracing_from_level(level: LogLevel, no_color: bool) {
-    setup_tracing(level.as_str(), no_color);
 }
 
 #[cfg(test)]

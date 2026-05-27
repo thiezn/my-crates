@@ -1,20 +1,28 @@
+//! Interactive prompts built on top of dialoguer.
+
 use crate::error::{Error, Result};
 use std::fmt::Display;
 use std::str::FromStr;
 
-/// Prompt for text input with an optional default value.
+/// Prompts for free-form text input.
+///
+/// # Errors
+///
+/// Returns an error if the terminal interaction fails.
 pub fn text_input(prompt: &str, default: Option<&str>) -> Result<String> {
     let mut input = dialoguer::Input::<String>::new().with_prompt(prompt);
     if let Some(default_value) = default {
         input = input.default(default_value.to_string());
     }
 
-    input
-        .interact_text()
-        .map_err(|error| Error::Io(format!("Input failed: {error}")))
+    input.interact_text().map_err(Error::from)
 }
 
-/// Prompt for text input that is validated to be non-empty.
+/// Prompts for text input that must not be empty.
+///
+/// # Errors
+///
+/// Returns an error if validation or terminal interaction fails.
 pub fn text_input_required(prompt: &str) -> Result<String> {
     dialoguer::Input::<String>::new()
         .with_prompt(prompt)
@@ -26,35 +34,42 @@ pub fn text_input_required(prompt: &str) -> Result<String> {
             }
         })
         .interact_text()
-        .map_err(|error| Error::Io(format!("Input failed: {error}")))
+        .map_err(Error::from)
 }
 
-/// Prompt user to select one item from a list. Returns the selected index.
+/// Prompts the user to select one item from a list.
+///
+/// # Errors
+///
+/// Returns an error if terminal interaction fails.
 pub fn select(prompt: &str, items: &[&str], default: Option<usize>) -> Result<usize> {
     let mut selection = dialoguer::Select::new().with_prompt(prompt).items(items);
     if let Some(default_index) = default {
         selection = selection.default(default_index);
     }
 
-    selection
-        .interact()
-        .map_err(|error| Error::Io(format!("Selection failed: {error}")))
+    selection.interact().map_err(Error::from)
 }
 
-/// Prompt for yes/no confirmation with an optional default.
+/// Prompts for a yes or no confirmation.
+///
+/// # Errors
+///
+/// Returns an error if terminal interaction fails.
 pub fn confirm(prompt: &str, default: Option<bool>) -> Result<bool> {
     let mut confirmation = dialoguer::Confirm::new().with_prompt(prompt);
     if let Some(default_value) = default {
         confirmation = confirmation.default(default_value);
     }
 
-    confirmation
-        .interact()
-        .map_err(|error| Error::Io(format!("Confirm failed: {error}")))
+    confirmation.interact().map_err(Error::from)
 }
 
-/// Prompt for a numeric value with an optional default.
-/// Works with any type that implements `FromStr + Display`.
+/// Prompts for a numeric value with an optional default.
+///
+/// # Errors
+///
+/// Returns an error if terminal interaction fails or parsing does not succeed.
 pub fn number_input<T>(prompt: &str, default: Option<T>) -> Result<T>
 where
     T: FromStr + Display + Clone,
@@ -73,18 +88,22 @@ where
                 .map_err(|error| format!("Invalid number: {error}"))
         })
         .interact_text()
-        .map_err(|error| Error::Io(format!("Input failed: {error}")))?;
+        .map_err(Error::from)?;
 
     raw.parse::<T>()
         .map_err(|error| Error::Other(format!("Parse failed: {error}")))
 }
 
-/// Prompt for a password/secret (hidden input).
+/// Prompts for a hidden password or secret value.
+///
+/// # Errors
+///
+/// Returns an error if terminal interaction fails.
 pub fn password_input(prompt: &str) -> Result<String> {
     dialoguer::Password::new()
         .with_prompt(prompt)
         .interact()
-        .map_err(|error| Error::Io(format!("Password input failed: {error}")))
+        .map_err(Error::from)
 }
 
 #[cfg(test)]

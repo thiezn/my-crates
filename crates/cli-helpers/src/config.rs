@@ -1,10 +1,17 @@
+//! Helpers for loading and saving TOML-backed configuration files.
+
 use crate::error::{Error, Result};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::path::Path;
 
-/// Load a config from the given TOML file path.
-/// Returns `C::default()` if the file does not exist.
+/// Loads a configuration value from a TOML file.
+///
+/// Missing files return `C::default()` instead of an error.
+///
+/// # Errors
+///
+/// Returns an error if the file exists but cannot be read or parsed.
 pub fn load<C: DeserializeOwned + Default>(path: &Path) -> Result<C> {
     if !path.exists() {
         return Ok(C::default());
@@ -13,8 +20,11 @@ pub fn load<C: DeserializeOwned + Default>(path: &Path) -> Result<C> {
     load_from_path(path)
 }
 
-/// Load config from the given path, creating a default file if missing.
-/// Returns the loaded config.
+/// Loads a configuration value, creating a default file when needed.
+///
+/// # Errors
+///
+/// Returns an error if the default cannot be serialized or if the file cannot be read.
 pub fn load_or_create<C: Serialize + DeserializeOwned + Default>(path: &Path) -> Result<C> {
     if !path.exists() {
         let config = C::default();
@@ -25,41 +35,38 @@ pub fn load_or_create<C: Serialize + DeserializeOwned + Default>(path: &Path) ->
     load_from_path(path)
 }
 
-/// Save a config to the given TOML file path (creates parent dirs).
+/// Saves a configuration value to a TOML file.
+///
+/// Parent directories are created automatically.
+///
+/// # Errors
+///
+/// Returns an error if directory creation, serialization, or file writing fails.
 pub fn save<C: Serialize>(config: &C, path: &Path) -> Result {
     if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent).map_err(|error| {
-            Error::Io(format!(
-                "Failed to create config directory '{}': {error}",
-                parent.display()
-            ))
+        std::fs::create_dir_all(parent).map_err(|source| Error::CreateDirectory {
+            path: parent.to_path_buf(),
+            source,
         })?;
     }
 
-    let serialized = toml::to_string_pretty(config)
-        .map_err(|error| Error::Config(format!("Failed to serialize config: {error}")))?;
+    let serialized = toml::to_string_pretty(config).map_err(Error::from)?;
 
-    std::fs::write(path, serialized).map_err(|error| {
-        Error::Io(format!(
-            "Failed to write config file '{}': {error}",
-            path.display()
-        ))
+    std::fs::write(path, serialized).map_err(|source| Error::WriteFile {
+        path: path.to_path_buf(),
+        source,
     })
 }
 
 fn load_from_path<C: DeserializeOwned>(path: &Path) -> Result<C> {
-    let contents = std::fs::read_to_string(path).map_err(|error| {
-        Error::Io(format!(
-            "Failed to read config file '{}': {error}",
-            path.display()
-        ))
+    let contents = std::fs::read_to_string(path).map_err(|source| Error::ReadFile {
+        path: path.to_path_buf(),
+        source,
     })?;
 
-    toml::from_str(&contents).map_err(|error| {
-        Error::Config(format!(
-            "Failed to parse config file '{}': {error}",
-            path.display()
-        ))
+    toml::from_str(&contents).map_err(|source| Error::ParseToml {
+        path: path.to_path_buf(),
+        source,
     })
 }
 

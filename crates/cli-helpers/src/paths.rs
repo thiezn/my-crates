@@ -1,10 +1,17 @@
+//! Path resolution helpers for CLI tools.
+
 use crate::error::{Error, Result};
 use std::path::{Path, PathBuf};
 
 fn home_dir() -> Result<PathBuf> {
-    dirs::home_dir().ok_or_else(|| Error::Config("Unable to determine home directory".to_string()))
+    dirs::home_dir().ok_or(Error::HomeDirectoryUnavailable)
 }
 
+/// Resolves a path against the current working directory and `~` home expansion.
+///
+/// # Errors
+///
+/// Returns an error if the current directory or home directory cannot be determined.
 pub fn resolve_path(path: &Path) -> Result<PathBuf> {
     if let Some(path_str) = path.to_str()
         && let Some(rest) = path_str.strip_prefix("~/")
@@ -20,12 +27,15 @@ pub fn resolve_path(path: &Path) -> Result<PathBuf> {
         return Ok(path.to_path_buf());
     }
 
-    let current_dir = std::env::current_dir().map_err(|error| {
-        Error::Config(format!("Unable to determine current directory: {error}"))
-    })?;
+    let current_dir = std::env::current_dir().map_err(Error::CurrentDirectory)?;
     Ok(current_dir.join(path))
 }
 
+/// Resolves a string path against the current working directory and `~` home expansion.
+///
+/// # Errors
+///
+/// Returns an error if the path cannot be resolved.
 pub fn resolve_path_str(path: &str) -> Result<PathBuf> {
     resolve_path(Path::new(path))
 }

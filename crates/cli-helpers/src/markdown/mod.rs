@@ -1,3 +1,5 @@
+//! Parsed markdown document model and parser.
+
 mod parser;
 mod types;
 
