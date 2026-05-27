@@ -4,8 +4,8 @@ use crate::tracing::{LogLevel, TracingOptions};
 /// Shared CLI arguments for tracing configuration.
 #[derive(::clap::Args, Debug, Clone, Default)]
 pub struct TracingArgs {
-    #[arg(long, global = true, value_enum, default_value_t = LogLevelValue::Info)]
-    log_level: LogLevelValue,
+    #[arg(long, global = true, value_enum, default_value_t = LogLevel::Info)]
+    log_level: LogLevel,
 }
 
 impl TracingArgs {
@@ -27,28 +27,6 @@ impl TracingArgs {
     /// Returns the configured log level.
     #[must_use]
     pub fn level(&self) -> LogLevel {
-        self.log_level.into()
-    }
-}
-
-#[derive(::clap::ValueEnum, Debug, Clone, Copy, Default)]
-enum LogLevelValue {
-    Trace,
-    Debug,
-    #[default]
-    Info,
-    Warn,
-    Error,
-}
-
-impl From<LogLevelValue> for LogLevel {
-    fn from(value: LogLevelValue) -> Self {
-        match value {
-            LogLevelValue::Trace => LogLevel::Trace,
-            LogLevelValue::Debug => LogLevel::Debug,
-            LogLevelValue::Info => LogLevel::Info,
-            LogLevelValue::Warn => LogLevel::Warn,
-            LogLevelValue::Error => LogLevel::Error,
-        }
+        self.log_level
     }
 }

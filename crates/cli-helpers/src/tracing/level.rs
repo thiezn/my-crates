@@ -1,7 +1,7 @@
 use serde::{Deserialize, Deserializer, Serialize};
 
 /// Log levels supported by cli-helpers tracing setup.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
+#[derive(::clap::ValueEnum, Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum LogLevel {
     /// Verbose trace-level logging.
