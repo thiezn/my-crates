@@ -6,4 +6,4 @@ mod subscriber;
 
 pub use level::LogLevel;
 pub use options::TracingOptions;
-pub use subscriber::init_tracing;
+pub use subscriber::{init_tracing, init_tracing_for_target};

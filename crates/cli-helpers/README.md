@@ -44,6 +44,11 @@ The intended composition model is static and typed:
 That keeps ownership clear. The binary owns parsing and process setup. The
 reusable command crate owns command behavior.
 
+For binaries that should only emit their own crate's tracing events, use
+`cli_helpers::init_tracing_for_target(level, no_color, "crate_name")`. The target
+filter matches that target and its subtargets while preserving the selected
+level and `RUST_LOG` behavior.
+
 ## Example Shape
 
 ```rust,ignore
@@ -81,4 +86,3 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 See the `examples/hello_command` workspace for a complete composition example
 with one reusable command crate consumed by multiple binaries.
-

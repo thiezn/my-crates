@@ -31,4 +31,4 @@ pub use output::{FieldSelector, OutputFormat, OutputOptions};
 pub use paths::{resolve_path, resolve_path_str};
 
 #[cfg(feature = "tracing")]
-pub use tracing::{LogLevel, TracingOptions, init_tracing};
+pub use tracing::{LogLevel, TracingOptions, init_tracing, init_tracing_for_target};
